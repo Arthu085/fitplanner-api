@@ -53,4 +53,62 @@ const createTraining = async (req, res) => {
 	}
 };
 
-module.exports = { createTraining };
+const fetchTrainingByUser = async (req, res) => {
+	const { id_user } = req.params;
+
+	if (!id_user) {
+		return res.status(400).json({
+			error: "ID do usuário é obrigatório",
+		});
+	}
+
+	try {
+		const trainings = await prisma.training.findMany({
+			where: { id_user: Number(id_user) },
+			include: {
+				exercise_workout: {
+					include: {
+						exercise: {
+							include: {
+								muscle_group: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		// Transformação para renomear os ids
+		const formated = trainings.map((training) => ({
+			id_training: training.id,
+			id_user: training.id_user,
+			title: training.title,
+			exercise_workout: training.exercise_workout.map((workout) => ({
+				id_workout: workout.id,
+				id_training: workout.id_training,
+				id_exercise: workout.id_exercise,
+				series: workout.series,
+				repetitions: workout.repetitions,
+				exercise: {
+					id_exercise: workout.exercise.id,
+					id_muscle_group: workout.exercise.id_muscle_group,
+					name: workout.exercise.name,
+					description: workout.exercise.description,
+					muscle_group: {
+						id_muscle_group: workout.exercise.muscle_group.id,
+						name: workout.exercise.muscle_group.name,
+					},
+				},
+			})),
+		}));
+
+		return res.status(200).json(formated);
+	} catch (error) {
+		console.error("Erro ao buscar treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+		});
+	}
+};
+
+module.exports = { createTraining, fetchTrainingByUser };
