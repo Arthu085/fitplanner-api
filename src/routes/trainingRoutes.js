@@ -1,10 +1,11 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
+const authorizeTraining = require("../middlewares/authorizeTraining");
 
 const {
 	createTraining,
 	fetchTrainingByUser,
-	deleteTraning,
+	deleteTraining,
 	editTraining,
 } = require("../controllers/trainingController");
 
@@ -12,7 +13,17 @@ const router = express.Router();
 
 router.post("/create", authMiddleware, createTraining);
 router.get("/", authMiddleware, fetchTrainingByUser);
-router.delete("/delete/:id_training", authMiddleware, deleteTraning);
-router.patch("/edit/:id_training", authMiddleware, editTraining);
+router.delete(
+	"/delete/:id_training",
+	authMiddleware,
+	authorizeTraining,
+	deleteTraining
+);
+router.patch(
+	"/edit/:id_training",
+	authMiddleware,
+	authorizeTraining,
+	editTraining
+);
 
 module.exports = router;

@@ -116,31 +116,10 @@ const fetchTrainingByUser = async (req, res) => {
 	}
 };
 
-const deleteTraning = async (req, res) => {
-	const { id_training } = req.params;
-	const id_user = req.user.id;
+const deleteTraining = async (req, res) => {
+	const training = req.training; // já validado e disponível pelo middleware
 
 	try {
-		const training = await prisma.training.findUnique({
-			where: {
-				id: Number(id_training),
-			},
-		});
-
-		if (!training) {
-			return res.status(404).json({
-				error: "Treino não encontrado",
-				success: false,
-			});
-		}
-
-		if (training.id_user !== id_user) {
-			return res.status(401).json({
-				error: "Você não tem permissão para excluir esse treino",
-				success: false,
-			});
-		}
-
 		await prisma.training.delete({
 			where: {
 				id: training.id,
@@ -153,52 +132,30 @@ const deleteTraning = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Erro ao excluir treino:", error);
-		return res
-			.status(500)
-			.json({ error: "Erro no servidor interno", success: false });
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
 	}
 };
 
 const editTraining = async (req, res) => {
-	const { id_training } = req.params;
 	const { title, exercises } = req.body;
-	const id_user = req.user.id;
+	const training = req.training; // já validado pelo middleware
 
 	try {
-		const training = await prisma.training.findUnique({
-			where: { id: Number(id_training) },
-		});
-
-		if (!training) {
-			return res.status(404).json({
-				error: "Treino não encontrado",
-				success: false,
-			});
-		}
-
-		if (training.id_user !== id_user) {
-			return res.status(401).json({
-				error: "Você não tem permissão para editar esse treino",
-				success: false,
-			});
-		}
-
 		if (Array.isArray(exercises)) {
 			for (const ex of exercises) {
 				const { id_exercise_workout } = ex;
 
 				if (id_exercise_workout) {
-					const existingExerciseWorkout =
-						await prisma.exercise_workout.findUnique({
-							where: { id: id_exercise_workout },
-						});
+					const existing = await prisma.exercise_workout.findUnique({
+						where: { id: id_exercise_workout },
+					});
 
-					if (
-						!existingExerciseWorkout ||
-						existingExerciseWorkout.id_training !== training.id
-					) {
+					if (!existing || existing.id_training !== training.id) {
 						return res.status(404).json({
-							error: `Exercício do treino com id ${id_exercise_workout} não encontrado ou não pertence ao treino`,
+							error: `Exercício com id ${id_exercise_workout} não encontrado ou inválido`,
 							success: false,
 						});
 					}
@@ -226,35 +183,35 @@ const editTraining = async (req, res) => {
 							...(repetitions !== undefined && { repetitions }),
 						},
 					});
-				} else {
-					if (id_exercise && series && repetitions) {
-						await prisma.exercise_workout.create({
-							data: {
-								id_training: training.id,
-								id_exercise,
-								series,
-								repetitions,
-							},
-						});
-					}
+				} else if (id_exercise && series && repetitions) {
+					await prisma.exercise_workout.create({
+						data: {
+							id_training: training.id,
+							id_exercise,
+							series,
+							repetitions,
+						},
+					});
 				}
 			}
 		}
 
-		return res
-			.status(200)
-			.json({ message: "Treino atualizado com sucesso", success: true });
+		return res.status(200).json({
+			message: "Treino atualizado com sucesso",
+			success: true,
+		});
 	} catch (error) {
 		console.error("Erro ao editar treino:", error);
-		return res
-			.status(500)
-			.json({ error: "Erro no servidor interno", success: false });
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
 	}
 };
 
 module.exports = {
 	createTraining,
 	fetchTrainingByUser,
-	deleteTraning,
+	deleteTraining,
 	editTraining,
 };
