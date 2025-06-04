@@ -3,7 +3,8 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 const createTraining = async (req, res) => {
-	const { id_user, title, exercises } = req.body;
+	const { title, exercises } = req.body;
+	const id_user = req.user.id;
 
 	if (
 		!id_user ||
@@ -54,7 +55,7 @@ const createTraining = async (req, res) => {
 };
 
 const fetchTrainingByUser = async (req, res) => {
-	const { id_user } = req.params;
+	const id_user = req.user.id;
 
 	if (!id_user) {
 		return res.status(400).json({

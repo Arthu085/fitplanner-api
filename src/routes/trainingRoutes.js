@@ -9,6 +9,6 @@ const {
 const router = express.Router();
 
 router.post("/create", authMiddleware, createTraining);
-router.get("/:id_user", authMiddleware, fetchTrainingByUser);
+router.get("/", authMiddleware, fetchTrainingByUser);
 
 module.exports = router;
