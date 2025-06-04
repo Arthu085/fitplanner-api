@@ -36,11 +36,19 @@ const finishTrainingSession = async (req, res) => {
 	try {
 		const id_training_session = Number(req.params.id_training_session);
 		const id_user = req.user.id;
+		const { exercises } = req.body;
 
 		if (isNaN(id_training_session)) {
 			return res
 				.status(400)
 				.json({ success: false, message: "ID da sessão inválido" });
+		}
+
+		if (!Array.isArray(exercises) || exercises.length === 0) {
+			return res.status(400).json({
+				success: false,
+				message: "Lista de exercícios é obrigatória",
+			});
 		}
 
 		const existingSession = await prisma.training_session.findUnique({
@@ -49,7 +57,7 @@ const finishTrainingSession = async (req, res) => {
 
 		if (!existingSession) {
 			return res
-				.status(403)
+				.status(404)
 				.json({ success: false, message: "Sessão não encontrada" });
 		}
 
@@ -59,18 +67,51 @@ const finishTrainingSession = async (req, res) => {
 				.json({ success: false, message: "Acesso não autorizado" });
 		}
 
-		const session = await prisma.training_session.update({
-			where: {
-				id: id_training_session,
-			},
-			data: {
-				finished_at: new Date(),
-			},
+		const validExercises = await prisma.exercise_workout.findMany({
+			where: { id_training: existingSession.id_training },
+			select: { id_exercise: true, series: true, repetitions: true },
 		});
+
+		const validMap = new Map();
+		validExercises.forEach((e) =>
+			validMap.set(e.id_exercise, {
+				series: e.series,
+				repetitions: e.repetitions,
+			})
+		);
+
+		const data = [];
+
+		for (const ex of exercises) {
+			if (!validMap.has(ex.id_exercise)) {
+				return res.status(400).json({
+					success: false,
+					message: `Exercício inválido: ${ex.id_exercise} não pertence ao treino`,
+				});
+			}
+
+			const defaultValues = validMap.get(ex.id_exercise);
+
+			data.push({
+				id_training_session: id_training_session,
+				id_exercise: ex.id_exercise,
+				series: ex.series ?? defaultValues.series,
+				repetitions: ex.repetitions ?? defaultValues.repetitions,
+				weight: ex.weight ?? null,
+				notes: ex.notes ?? null,
+			});
+		}
+
+		const session = await prisma.training_session.update({
+			where: { id: id_training_session },
+			data: { finished_at: new Date() },
+		});
+
+		await prisma.exercise_session.createMany({ data });
 
 		return res.status(200).json({
 			success: true,
-			message: "Treino finalizado",
+			message: "Treino finalizado com sucesso.",
 			session,
 		});
 	} catch (error) {
