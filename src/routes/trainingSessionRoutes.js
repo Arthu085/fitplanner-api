@@ -7,6 +7,7 @@ const checkActiveTrainingSession = require("../middlewares/trainingSession/check
 const {
 	startTrainingSession,
 	finishTrainingSession,
+	deleteTrainingSession,
 } = require("../controllers/trainingSessionController");
 
 const router = express.Router();
@@ -21,8 +22,14 @@ router.post(
 router.post(
 	"/finish/:id_training_session",
 	authMiddleware,
-	validateTrainingSession,
+	validateTrainingSession(false),
 	finishTrainingSession
+);
+router.delete(
+	"/delete/:id_training_session",
+	authMiddleware,
+	validateTrainingSession(true),
+	deleteTrainingSession
 );
 
 module.exports = router;

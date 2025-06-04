@@ -34,14 +34,14 @@ const startTrainingSession = async (req, res) => {
 
 const finishTrainingSession = async (req, res) => {
 	try {
-		const id_training_session = Number(req.params.id_training_session);
 		const id_user = req.user.id;
+		const session = req.trainingSession; // já vem do middleware
 		const { exercises } = req.body;
 
-		if (isNaN(id_training_session)) {
+		if (session.id_user !== id_user) {
 			return res
-				.status(400)
-				.json({ success: false, message: "ID da sessão inválido" });
+				.status(403)
+				.json({ success: false, message: "Acesso não autorizado" });
 		}
 
 		if (!Array.isArray(exercises) || exercises.length === 0) {
@@ -51,24 +51,8 @@ const finishTrainingSession = async (req, res) => {
 			});
 		}
 
-		const existingSession = await prisma.training_session.findUnique({
-			where: { id: id_training_session },
-		});
-
-		if (!existingSession) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Sessão não encontrada" });
-		}
-
-		if (existingSession.id_user !== id_user) {
-			return res
-				.status(403)
-				.json({ success: false, message: "Acesso não autorizado" });
-		}
-
 		const validExercises = await prisma.exercise_workout.findMany({
-			where: { id_training: existingSession.id_training },
+			where: { id_training: session.id_training },
 			select: { id_exercise: true, series: true, repetitions: true },
 		});
 
@@ -93,7 +77,7 @@ const finishTrainingSession = async (req, res) => {
 			const defaultValues = validMap.get(ex.id_exercise);
 
 			data.push({
-				id_training_session: id_training_session,
+				id_training_session: session.id,
 				id_exercise: ex.id_exercise,
 				series: ex.series ?? defaultValues.series,
 				repetitions: ex.repetitions ?? defaultValues.repetitions,
@@ -102,8 +86,8 @@ const finishTrainingSession = async (req, res) => {
 			});
 		}
 
-		const session = await prisma.training_session.update({
-			where: { id: id_training_session },
+		const updatedSession = await prisma.training_session.update({
+			where: { id: session.id },
 			data: { finished_at: new Date() },
 		});
 
@@ -112,7 +96,7 @@ const finishTrainingSession = async (req, res) => {
 		return res.status(200).json({
 			success: true,
 			message: "Treino finalizado com sucesso.",
-			session,
+			session: updatedSession,
 		});
 	} catch (error) {
 		console.error("Erro ao finalizar treino:", error);
@@ -120,7 +104,38 @@ const finishTrainingSession = async (req, res) => {
 	}
 };
 
+const deleteTrainingSession = async (req, res) => {
+	const session = req.trainingSession; // já vem do middleware
+	const id_user = req.user.id;
+
+	if (session.id_user !== id_user) {
+		return res
+			.status(403)
+			.json({ success: false, message: "Acesso não autorizado" });
+	}
+
+	try {
+		await prisma.training_session.delete({
+			where: {
+				id: session.id,
+			},
+		});
+
+		return res.status(200).json({
+			message: "Sessão de treino excluída com sucesso",
+			success: true,
+		});
+	} catch (error) {
+		console.error("Erro ao excluir sessão de treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
 module.exports = {
 	startTrainingSession,
 	finishTrainingSession,
+	deleteTrainingSession,
 };
