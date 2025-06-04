@@ -159,4 +159,102 @@ const deleteTraning = async (req, res) => {
 	}
 };
 
-module.exports = { createTraining, fetchTrainingByUser, deleteTraning };
+const editTraining = async (req, res) => {
+	const { id_training } = req.params;
+	const { title, exercises } = req.body;
+	const id_user = req.user.id;
+
+	try {
+		const training = await prisma.training.findUnique({
+			where: { id: Number(id_training) },
+		});
+
+		if (!training) {
+			return res.status(404).json({
+				error: "Treino não encontrado",
+				success: false,
+			});
+		}
+
+		if (training.id_user !== id_user) {
+			return res.status(401).json({
+				error: "Você não tem permissão para editar esse treino",
+				success: false,
+			});
+		}
+
+		if (Array.isArray(exercises)) {
+			for (const ex of exercises) {
+				const { id_exercise_workout } = ex;
+
+				if (id_exercise_workout) {
+					const existingExerciseWorkout =
+						await prisma.exercise_workout.findUnique({
+							where: { id: id_exercise_workout },
+						});
+
+					if (
+						!existingExerciseWorkout ||
+						existingExerciseWorkout.id_training !== training.id
+					) {
+						return res.status(404).json({
+							error: `Exercício do treino com id ${id_exercise_workout} não encontrado ou não pertence ao treino`,
+							success: false,
+						});
+					}
+				}
+			}
+		}
+
+		if (title) {
+			await prisma.training.update({
+				where: { id: training.id },
+				data: { title },
+			});
+		}
+
+		if (Array.isArray(exercises)) {
+			for (const ex of exercises) {
+				const { id_exercise_workout, id_exercise, series, repetitions } = ex;
+
+				if (id_exercise_workout) {
+					await prisma.exercise_workout.update({
+						where: { id: id_exercise_workout },
+						data: {
+							...(id_exercise !== undefined && { id_exercise }),
+							...(series !== undefined && { series }),
+							...(repetitions !== undefined && { repetitions }),
+						},
+					});
+				} else {
+					if (id_exercise && series && repetitions) {
+						await prisma.exercise_workout.create({
+							data: {
+								id_training: training.id,
+								id_exercise,
+								series,
+								repetitions,
+							},
+						});
+					}
+				}
+			}
+		}
+
+		return res
+			.status(200)
+			.json({ message: "Treino atualizado com sucesso", success: true });
+	} catch (error) {
+		console.error("Erro ao editar treino:", error);
+		return res
+			.status(500)
+			.json({ error: "Erro no servidor interno", success: false });
+	}
+};
+
+module.exports = {
+	createTraining,
+	fetchTrainingByUser,
+	deleteTraning,
+	editTraining,
+};
