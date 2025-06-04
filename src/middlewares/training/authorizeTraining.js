@@ -19,7 +19,8 @@ const authorizeTraining = async (req, res, next) => {
 
 		if (training.id_user !== id_user) {
 			return res.status(403).json({
-				error: "Você não tem permissão para editar ou excluir esse treino",
+				error:
+					"Você não tem permissão para editar, excluir ou iniciar esse treino",
 				success: false,
 			});
 		}

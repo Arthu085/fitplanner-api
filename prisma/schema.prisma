@@ -15,6 +15,7 @@ model exercise {
   name             String             @db.VarChar(100)
   description      String?
   muscle_group     muscle_group       @relation(fields: [id_muscle_group], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exercise_session exercise_session[]
   exercise_workout exercise_workout[]
 
   @@schema("fitplanner")
@@ -46,16 +47,45 @@ model training {
   title            String             @db.VarChar(50)
   exercise_workout exercise_workout[]
   user             user               @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  training_session training_session[]
 
   @@schema("fitplanner")
 }
 
 model user {
-  id       Int        @id @default(autoincrement())
-  name     String     @db.VarChar(50)
-  email    String     @unique @db.VarChar(100)
-  password String     @db.VarChar(70)
-  training training[]
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(50)
+  email            String             @unique @db.VarChar(100)
+  password         String             @db.VarChar(70)
+  training         training[]
+  training_session training_session[]
+
+  @@schema("fitplanner")
+}
+
+model exercise_session {
+  id                  Int              @id @default(autoincrement())
+  id_training_session Int
+  id_exercise         Int
+  series              Int
+  repetitions         Int
+  weight              Decimal?         @db.Decimal
+  notes               String?
+  exercise            exercise         @relation(fields: [id_exercise], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_exercise_session_exercise")
+  training_session    training_session @relation(fields: [id_training_session], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_exercise_session_training_session")
+
+  @@schema("fitplanner")
+}
+
+model training_session {
+  id               Int                @id @default(autoincrement())
+  id_user          Int
+  id_training      Int
+  started_at       DateTime           @db.Timestamptz(6)
+  finished_at      DateTime?          @db.Timestamptz(6)
+  exercise_session exercise_session[]
+  training         training           @relation(fields: [id_training], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_training_session_training")
+  user             user               @relation(fields: [id_user], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_training_session_user")
 
   @@schema("fitplanner")
 }

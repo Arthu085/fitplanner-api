@@ -1,7 +1,7 @@
 const express = require("express");
-const authMiddleware = require("../middlewares/authMiddleware");
-const authorizeTraining = require("../middlewares/authorizeTraining");
-const validateCreateTraining = require("../middlewares/validateCreateTraining");
+const authMiddleware = require("../middlewares/auth/authMiddleware");
+const authorizeTraining = require("../middlewares/training/authorizeTraining");
+const validateCreateTraining = require("../middlewares/training/validateCreateTraining");
 
 const {
 	createTraining,
