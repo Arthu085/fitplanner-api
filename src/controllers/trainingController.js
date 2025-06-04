@@ -6,18 +6,6 @@ const createTraining = async (req, res) => {
 	const { title, exercises } = req.body;
 	const id_user = req.user.id;
 
-	if (
-		!id_user ||
-		!title ||
-		!Array.isArray(exercises) ||
-		exercises.length === 0
-	) {
-		return res.status(400).json({
-			error: "Dados inválidos para criação do treino",
-			success: false,
-		});
-	}
-
 	try {
 		const tableTraining = await prisma.training.create({
 			data: {

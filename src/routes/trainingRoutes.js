@@ -1,6 +1,7 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authorizeTraining = require("../middlewares/authorizeTraining");
+const validateCreateTraining = require("../middlewares/validateCreateTraining");
 
 const {
 	createTraining,
@@ -11,7 +12,7 @@ const {
 
 const router = express.Router();
 
-router.post("/create", authMiddleware, createTraining);
+router.post("/create", authMiddleware, validateCreateTraining, createTraining);
 router.get("/", authMiddleware, fetchTrainingByUser);
 router.delete(
 	"/delete/:id_training",
