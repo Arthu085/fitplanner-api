@@ -12,9 +12,10 @@ const createTraining = async (req, res) => {
 		!Array.isArray(exercises) ||
 		exercises.length === 0
 	) {
-		return res
-			.status(400)
-			.json({ error: "Dados inválidos para criação do treino" });
+		return res.status(400).json({
+			error: "Dados inválidos para criação do treino",
+			success: false,
+		});
 	}
 
 	try {
@@ -50,6 +51,7 @@ const createTraining = async (req, res) => {
 		console.error("Erro ao criar treino:", error);
 		return res.status(500).json({
 			error: "Erro no servidor interno",
+			success: false,
 		});
 	}
 };
@@ -60,6 +62,7 @@ const fetchTrainingByUser = async (req, res) => {
 	if (!id_user) {
 		return res.status(400).json({
 			error: "ID do usuário é obrigatório",
+			success: false,
 		});
 	}
 
@@ -108,8 +111,52 @@ const fetchTrainingByUser = async (req, res) => {
 		console.error("Erro ao buscar treino:", error);
 		return res.status(500).json({
 			error: "Erro no servidor interno",
+			success: false,
 		});
 	}
 };
 
-module.exports = { createTraining, fetchTrainingByUser };
+const deleteTraning = async (req, res) => {
+	const { id_training } = req.params;
+	const id_user = req.user.id;
+
+	try {
+		const training = await prisma.training.findUnique({
+			where: {
+				id: Number(id_training),
+			},
+		});
+
+		if (!training) {
+			return res.status(404).json({
+				error: "Treino não encontrado",
+				success: false,
+			});
+		}
+
+		if (training.id_user !== id_user) {
+			return res.status(401).json({
+				error: "Você não tem permissão para excluir esse treino",
+				success: false,
+			});
+		}
+
+		await prisma.training.delete({
+			where: {
+				id: training.id,
+			},
+		});
+
+		return res.status(200).json({
+			message: "Treino excluído com sucesso",
+			success: true,
+		});
+	} catch (error) {
+		console.error("Erro ao excluir treino:", error);
+		return res
+			.status(500)
+			.json({ error: "Erro no servidor interno", success: false });
+	}
+};
+
+module.exports = { createTraining, fetchTrainingByUser, deleteTraning };
