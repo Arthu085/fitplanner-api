@@ -155,6 +155,9 @@ const fetchTrainingSessionByUser = async (req, res) => {
 					},
 				},
 			},
+			orderBy: {
+				id: "desc",
+			},
 		});
 
 		const formated = trainingsSessions.map((session) => ({
