@@ -147,11 +147,15 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	try {
 		const trainingsSessions = await prisma.training_session.findMany({
 			where: { id_user: Number(id_user) },
-			include: {
-				training: true,
-				exercise_session: {
-					include: {
-						exercise: true,
+			select: {
+				id: true,
+				id_user: true,
+				id_training: true,
+				started_at: true,
+				finished_at: true,
+				training: {
+					select: {
+						title: true,
 					},
 				},
 			},
@@ -167,24 +171,8 @@ const fetchTrainingSessionByUser = async (req, res) => {
 			started_at: session.started_at,
 			finished_at: session.finished_at,
 			training: {
-				id_training: session.training.id,
 				title: session.training.title,
 			},
-			exercise_session: session.exercise_session.map((exercise) => ({
-				id_exercise_session: exercise.id,
-				id_training_session: exercise.id_training_session,
-				id_exercise: exercise.id_exercise,
-				series: exercise.series,
-				repetitions: exercise.repetitions,
-				weight: exercise.weight,
-				notes: exercise.notes,
-				exercise: {
-					id_exercise: exercise.exercise.id,
-					id_muscle_group: exercise.exercise.id_muscle_group,
-					name: exercise.exercise.name,
-					description: exercise.exercise.description,
-				},
-			})),
 		}));
 
 		return res.status(200).json(formated);
