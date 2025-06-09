@@ -186,7 +186,7 @@ const fetchTrainingSessionByUser = async (req, res) => {
 };
 
 const fetchTrainingSessionByUserAndId = async (req, res) => {
-	const { id } = req.params;
+	const { id_training_session } = req.params;
 	const id_user = req.user.id;
 
 	if (!id_user) {
@@ -198,7 +198,7 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 
 	try {
 		const trainingSession = await prisma.training_session.findFirst({
-			where: { id_user: Number(id_user), id: Number(id) },
+			where: { id_user: Number(id_user), id: Number(id_training_session) },
 			include: {
 				training: true,
 				exercise_session: {
@@ -246,10 +246,61 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 	}
 };
 
+const fetchExerciseByTrainingAndSession = async (req, res) => {
+	const { id_training_session } = req.params;
+	const id_user = req.user.id;
+
+	if (!id_user) {
+		return res.status(400).json({
+			error: "ID do usuário é obrigatório",
+			success: false,
+		});
+	}
+
+	try {
+		const session = await prisma.training_session.findFirst({
+			where: {
+				id: Number(id_training_session),
+				id_user: Number(id_user),
+			},
+			select: {
+				id_training: true,
+			},
+		});
+
+		if (!session) {
+			return res.status(404).json({
+				success: false,
+				message: "Sessão de treino não encontrada",
+			});
+		}
+
+		const exerciseIds = await prisma.exercise_workout.findMany({
+			where: {
+				id_training: session.id_training,
+			},
+			select: {
+				id_exercise: true,
+			},
+		});
+
+		return res
+			.status(200)
+			.json(exerciseIds.map((e) => ({ id_exercise: e.id_exercise })));
+	} catch (error) {
+		console.error("Erro ao buscar exercícios da sessão de treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
 module.exports = {
 	startTrainingSession,
 	finishTrainingSession,
 	deleteTrainingSession,
 	fetchTrainingSessionByUser,
 	fetchTrainingSessionByUserAndId,
+	fetchExerciseByTrainingAndSession,
 };
