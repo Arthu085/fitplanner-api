@@ -197,9 +197,71 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	}
 };
 
+const fetchTrainingSessionByUserAndId = async (req, res) => {
+	const { id } = req.params;
+	const id_user = req.user.id;
+
+	if (!id_user) {
+		return res.status(400).json({
+			error: "ID do usuário é obrigatório",
+			success: false,
+		});
+	}
+
+	try {
+		const trainingSession = await prisma.training_session.findMany({
+			where: { id_user: Number(id_user), id: Number(id) },
+			include: {
+				training: true,
+				exercise_session: {
+					include: {
+						exercise: true,
+					},
+				},
+			},
+		});
+
+		const formated = trainingSession.map((session) => ({
+			id_training_session: session.id,
+			id_user: session.id_user,
+			id_training: session.id_training,
+			started_at: session.started_at,
+			finished_at: session.finished_at,
+			training: {
+				id_training: session.training.id,
+				title: session.training.title,
+			},
+			exercise_session: session.exercise_session.map((exercise) => ({
+				id_exercise_session: exercise.id,
+				id_training_session: exercise.id_training_session,
+				id_exercise: exercise.id_exercise,
+				series: exercise.series,
+				repetitions: exercise.repetitions,
+				weight: exercise.weight,
+				notes: exercise.notes,
+				exercise: {
+					id_exercise: exercise.exercise.id,
+					id_muscle_group: exercise.exercise.id_muscle_group,
+					name: exercise.exercise.name,
+					description: exercise.exercise.description,
+				},
+			})),
+		}));
+
+		return res.status(200).json(formated);
+	} catch (error) {
+		console.error("Erro ao buscar sessão de treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
 module.exports = {
 	startTrainingSession,
 	finishTrainingSession,
 	deleteTrainingSession,
 	fetchTrainingSessionByUser,
+	fetchTrainingSessionByUserAndId,
 };

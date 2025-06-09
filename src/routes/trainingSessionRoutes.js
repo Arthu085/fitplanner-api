@@ -9,6 +9,7 @@ const {
 	finishTrainingSession,
 	deleteTrainingSession,
 	fetchTrainingSessionByUser,
+	fetchTrainingSessionByUserAndId,
 } = require("../controllers/trainingSessionController");
 
 const router = express.Router();
@@ -33,5 +34,6 @@ router.delete(
 	deleteTrainingSession
 );
 router.get("/", authMiddleware, fetchTrainingSessionByUser);
+router.get("/:id", authMiddleware, fetchTrainingSessionByUserAndId);
 
 module.exports = router;
