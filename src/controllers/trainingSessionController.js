@@ -197,7 +197,7 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 	}
 
 	try {
-		const trainingSession = await prisma.training_session.findMany({
+		const trainingSession = await prisma.training_session.findFirst({
 			where: { id_user: Number(id_user), id: Number(id) },
 			include: {
 				training: true,
@@ -209,17 +209,17 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 			},
 		});
 
-		const formated = trainingSession.map((session) => ({
-			id_training_session: session.id,
-			id_user: session.id_user,
-			id_training: session.id_training,
-			started_at: session.started_at,
-			finished_at: session.finished_at,
+		const formated = {
+			id_training_session: trainingSession.id,
+			id_user: trainingSession.id_user,
+			id_training: trainingSession.id_training,
+			started_at: trainingSession.started_at,
+			finished_at: trainingSession.finished_at,
 			training: {
-				id_training: session.training.id,
-				title: session.training.title,
+				id_training: trainingSession.training.id,
+				title: trainingSession.training.title,
 			},
-			exercise_session: session.exercise_session.map((exercise) => ({
+			exercise_session: trainingSession.exercise_session.map((exercise) => ({
 				id_exercise_session: exercise.id,
 				id_training_session: exercise.id_training_session,
 				id_exercise: exercise.id_exercise,
@@ -234,7 +234,7 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 					description: exercise.exercise.description,
 				},
 			})),
-		}));
+		};
 
 		return res.status(200).json(formated);
 	} catch (error) {
