@@ -186,7 +186,7 @@ const fetchTrainingSessionByUser = async (req, res) => {
 };
 
 const fetchTrainingSessionByUserAndId = async (req, res) => {
-	const { id_training_session } = req.params;
+	const id_training_session = req.trainingSession.id; // já vem do middleware
 	const id_user = req.user.id;
 
 	if (!id_user) {
@@ -247,7 +247,7 @@ const fetchTrainingSessionByUserAndId = async (req, res) => {
 };
 
 const fetchExerciseByTrainingAndSession = async (req, res) => {
-	const { id_training_session } = req.params;
+	const id_training_session = req.trainingSession.id; // já vem do middleware
 	const id_user = req.user.id;
 
 	if (!id_user) {

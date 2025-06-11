@@ -22,27 +22,34 @@ router.post(
 	checkActiveTrainingSession,
 	startTrainingSession
 );
+
 router.post(
 	"/finish/:id_training_session",
 	authMiddleware,
 	validateTrainingSession(false),
 	finishTrainingSession
 );
+
 router.delete(
 	"/delete/:id_training_session",
 	authMiddleware,
 	validateTrainingSession(true),
 	deleteTrainingSession
 );
+
 router.get("/", authMiddleware, fetchTrainingSessionByUser);
+
 router.get(
 	"/:id_training_session",
 	authMiddleware,
+	validateTrainingSession(true),
 	fetchTrainingSessionByUserAndId
 );
+
 router.get(
 	"/exercise/:id_training_session",
 	authMiddleware,
+	validateTrainingSession(true),
 	fetchExerciseByTrainingAndSession
 );
 
