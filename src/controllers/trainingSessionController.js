@@ -136,6 +136,9 @@ const deleteTrainingSession = async (req, res) => {
 
 const fetchTrainingSessionByUser = async (req, res) => {
 	const id_user = req.user.id;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 6;
+	const skip = (page - 1) * limit;
 
 	if (!id_user) {
 		return res.status(400).json({
@@ -145,6 +148,10 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	}
 
 	try {
+		const total = await prisma.training_session.count({
+			where: { id_user: Number(id_user) },
+		});
+
 		const trainingsSessions = await prisma.training_session.findMany({
 			where: { id_user: Number(id_user) },
 			select: {
@@ -162,6 +169,8 @@ const fetchTrainingSessionByUser = async (req, res) => {
 			orderBy: {
 				id: "desc",
 			},
+			skip,
+			take: limit,
 		});
 
 		const formated = trainingsSessions.map((session) => ({
@@ -175,7 +184,15 @@ const fetchTrainingSessionByUser = async (req, res) => {
 			},
 		}));
 
-		return res.status(200).json(formated);
+		return res.status(200).json({
+			data: formated,
+			pagination: {
+				page,
+				limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+			},
+		});
 	} catch (error) {
 		console.error("Erro ao buscar sessões de treino:", error);
 		return res.status(500).json({
