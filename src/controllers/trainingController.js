@@ -57,12 +57,41 @@ const fetchTrainingByUser = async (req, res) => {
 	try {
 		const trainings = await prisma.training.findMany({
 			where: { id_user: Number(id_user) },
+		});
+
+		return res.status(200).json(trainings);
+	} catch (error) {
+		console.error("Erro ao buscar treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
+const fetchTrainingDetails = async (req, res) => {
+	const training = req.training;
+
+	try {
+		const details = await prisma.training.findUnique({
+			where: { id: Number(training.id) },
 			include: {
 				exercise_workout: {
-					include: {
+					select: {
+						id: true,
+						id_exercise: true,
+						series: true,
+						repetitions: true,
 						exercise: {
-							include: {
-								muscle_group: true,
+							select: {
+								id_muscle_group: true,
+								name: true,
+								description: true,
+								muscle_group: {
+									select: {
+										name: true,
+									},
+								},
 							},
 						},
 					},
@@ -70,33 +99,18 @@ const fetchTrainingByUser = async (req, res) => {
 			},
 		});
 
-		// Transformação para renomear os ids
-		const formated = trainings.map((training) => ({
-			id_training: training.id,
-			id_user: training.id_user,
-			title: training.title,
-			exercise_workout: training.exercise_workout.map((workout) => ({
-				id_workout: workout.id,
-				id_training: workout.id_training,
-				id_exercise: workout.id_exercise,
-				series: workout.series,
-				repetitions: workout.repetitions,
-				exercise: {
-					id_exercise: workout.exercise.id,
-					id_muscle_group: workout.exercise.id_muscle_group,
-					name: workout.exercise.name,
-					description: workout.exercise.description,
-					muscle_group: {
-						id_muscle_group: workout.exercise.muscle_group.id,
-						name: workout.exercise.muscle_group.name,
-					},
-				},
+		const modified = {
+			...details,
+			exercise_workout: details.exercise_workout.map((item) => ({
+				...item,
+				id_exercise_workout: item.id,
+				id: undefined,
 			})),
-		}));
+		};
 
-		return res.status(200).json(formated);
+		return res.status(200).json(modified);
 	} catch (error) {
-		console.error("Erro ao buscar treino:", error);
+		console.error("Erro ao buscar detalhes do treino:", error);
 		return res.status(500).json({
 			error: "Erro no servidor interno",
 			success: false,
@@ -200,6 +214,7 @@ const editTraining = async (req, res) => {
 module.exports = {
 	createTraining,
 	fetchTrainingByUser,
+	fetchTrainingDetails,
 	deleteTraining,
 	editTraining,
 };
