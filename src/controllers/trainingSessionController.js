@@ -136,6 +136,9 @@ const deleteTrainingSession = async (req, res) => {
 
 const fetchTrainingSessionByUser = async (req, res) => {
 	const id_user = req.user.id;
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 6;
+	const skip = (page - 1) * limit;
 
 	if (!id_user) {
 		return res.status(400).json({
@@ -145,19 +148,29 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	}
 
 	try {
+		const total = await prisma.training_session.count({
+			where: { id_user: Number(id_user) },
+		});
+
 		const trainingsSessions = await prisma.training_session.findMany({
 			where: { id_user: Number(id_user) },
-			include: {
-				training: true,
-				exercise_session: {
-					include: {
-						exercise: true,
+			select: {
+				id: true,
+				id_user: true,
+				id_training: true,
+				started_at: true,
+				finished_at: true,
+				training: {
+					select: {
+						title: true,
 					},
 				},
 			},
 			orderBy: {
 				id: "desc",
 			},
+			skip,
+			take: limit,
 		});
 
 		const formated = trainingsSessions.map((session) => ({
@@ -167,10 +180,63 @@ const fetchTrainingSessionByUser = async (req, res) => {
 			started_at: session.started_at,
 			finished_at: session.finished_at,
 			training: {
-				id_training: session.training.id,
 				title: session.training.title,
 			},
-			exercise_session: session.exercise_session.map((exercise) => ({
+		}));
+
+		return res.status(200).json({
+			data: formated,
+			pagination: {
+				page,
+				limit,
+				total,
+				totalPages: Math.ceil(total / limit),
+			},
+		});
+	} catch (error) {
+		console.error("Erro ao buscar sessões de treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
+const fetchTrainingSessionByUserAndId = async (req, res) => {
+	const id_training_session = req.trainingSession.id; // já vem do middleware
+	const id_user = req.user.id;
+
+	if (!id_user) {
+		return res.status(400).json({
+			error: "ID do usuário é obrigatório",
+			success: false,
+		});
+	}
+
+	try {
+		const trainingSession = await prisma.training_session.findFirst({
+			where: { id_user: Number(id_user), id: Number(id_training_session) },
+			include: {
+				training: true,
+				exercise_session: {
+					include: {
+						exercise: true,
+					},
+				},
+			},
+		});
+
+		const formated = {
+			id_training_session: trainingSession.id,
+			id_user: trainingSession.id_user,
+			id_training: trainingSession.id_training,
+			started_at: trainingSession.started_at,
+			finished_at: trainingSession.finished_at,
+			training: {
+				id_training: trainingSession.training.id,
+				title: trainingSession.training.title,
+			},
+			exercise_session: trainingSession.exercise_session.map((exercise) => ({
 				id_exercise_session: exercise.id,
 				id_training_session: exercise.id_training_session,
 				id_exercise: exercise.id_exercise,
@@ -185,11 +251,61 @@ const fetchTrainingSessionByUser = async (req, res) => {
 					description: exercise.exercise.description,
 				},
 			})),
-		}));
+		};
 
 		return res.status(200).json(formated);
 	} catch (error) {
-		console.error("Erro ao buscar sessões de treino:", error);
+		console.error("Erro ao buscar sessão de treino:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
+const fetchExerciseByTrainingAndSession = async (req, res) => {
+	const id_training_session = req.trainingSession.id; // já vem do middleware
+	const id_user = req.user.id;
+
+	if (!id_user) {
+		return res.status(400).json({
+			error: "ID do usuário é obrigatório",
+			success: false,
+		});
+	}
+
+	try {
+		const session = await prisma.training_session.findFirst({
+			where: {
+				id: Number(id_training_session),
+				id_user: Number(id_user),
+			},
+			select: {
+				id_training: true,
+			},
+		});
+
+		if (!session) {
+			return res.status(404).json({
+				success: false,
+				message: "Sessão de treino não encontrada",
+			});
+		}
+
+		const exerciseIds = await prisma.exercise_workout.findMany({
+			where: {
+				id_training: session.id_training,
+			},
+			select: {
+				id_exercise: true,
+			},
+		});
+
+		return res
+			.status(200)
+			.json(exerciseIds.map((e) => ({ id_exercise: e.id_exercise })));
+	} catch (error) {
+		console.error("Erro ao buscar exercícios da sessão de treino:", error);
 		return res.status(500).json({
 			error: "Erro no servidor interno",
 			success: false,
@@ -202,4 +318,6 @@ module.exports = {
 	finishTrainingSession,
 	deleteTrainingSession,
 	fetchTrainingSessionByUser,
+	fetchTrainingSessionByUserAndId,
+	fetchExerciseByTrainingAndSession,
 };
