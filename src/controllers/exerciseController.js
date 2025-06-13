@@ -13,7 +13,15 @@ const fetchAllExercises = async (req, res) => {
 	}
 
 	try {
-		const exercises = await prisma.exercise.findMany({});
+		const exercises = await prisma.exercise.findMany({
+			include: {
+				muscle_group: {
+					select: {
+						name: true,
+					},
+				},
+			},
+		});
 
 		return res.status(200).json(exercises);
 	} catch (error) {
