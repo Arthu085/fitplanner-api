@@ -18,7 +18,7 @@ router.post("/create", authMiddleware, validateCreateTraining, createTraining);
 router.get("/", authMiddleware, fetchTrainingByUser);
 
 router.get(
-	"/:id_training",
+	"/details/:id_training",
 	authMiddleware,
 	authorizeTraining,
 	fetchTrainingDetails
