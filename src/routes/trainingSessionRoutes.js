@@ -40,7 +40,7 @@ router.delete(
 router.get("/", authMiddleware, fetchTrainingSessionByUser);
 
 router.get(
-	"/:id_training_session",
+	"/details/:id_training_session",
 	authMiddleware,
 	validateTrainingSession(true),
 	fetchTrainingSessionByUserAndId
