@@ -165,6 +165,51 @@ const editTraining = async (req, res) => {
 	const training = req.training; // já validado pelo middleware
 
 	try {
+		// Busca exercícios atuais no banco para o treino
+		const currentExercises = await prisma.exercise_workout.findMany({
+			where: { id_training: training.id },
+		});
+
+		// IDs dos exercícios atuais
+		const currentIds = currentExercises.map((ex) => ex.id);
+
+		// IDs enviados na requisição
+		const sentIds = (Array.isArray(exercises) ? exercises : [])
+			.filter((ex) => ex.id_exercise_workout)
+			.map((ex) => ex.id_exercise_workout);
+
+		// Identifica exercícios removidos (presentes no banco, mas não na requisição)
+		const toDeleteIds = currentIds.filter((id) => !sentIds.includes(id));
+
+		// Verifica se houve alteração no título
+		const titleChanged = title && title !== training.title;
+
+		// Verifica se houve alteração nos exercícios
+		// Simplificação: compara quantidade + conteúdo básico (pode ser melhorado)
+		const exercisesChanged =
+			exercises.length !== currentExercises.length ||
+			exercises.some((ex) => {
+				if (!ex.id_exercise_workout) return true; // novo exercício
+				// procura o exercício atual para comparar dados
+				const currentEx = currentExercises.find(
+					(ce) => ce.id === ex.id_exercise_workout
+				);
+				if (!currentEx) return true;
+				return (
+					ex.id_exercise !== currentEx.id_exercise ||
+					ex.series !== currentEx.series ||
+					ex.repetitions !== currentEx.repetitions
+				);
+			});
+
+		if (!titleChanged && !exercisesChanged && toDeleteIds.length === 0) {
+			return res.status(400).json({
+				message: "Nenhuma alteração foi feita",
+				success: false,
+			});
+		}
+
+		// Validação dos exercícios enviados
 		if (Array.isArray(exercises)) {
 			for (const ex of exercises) {
 				const { id_exercise_workout } = ex;
@@ -184,13 +229,22 @@ const editTraining = async (req, res) => {
 			}
 		}
 
-		if (title) {
+		// Atualiza o título se necessário
+		if (titleChanged) {
 			await prisma.training.update({
 				where: { id: training.id },
 				data: { title },
 			});
 		}
 
+		// Remove os exercícios deletados
+		if (toDeleteIds.length > 0) {
+			await prisma.exercise_workout.deleteMany({
+				where: { id: { in: toDeleteIds } },
+			});
+		}
+
+		// Atualiza ou cria exercícios
 		if (Array.isArray(exercises)) {
 			for (const ex of exercises) {
 				const { id_exercise_workout, id_exercise, series, repetitions } = ex;
