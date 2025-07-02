@@ -19,6 +19,7 @@ app.use(
 	apiRoute + "/training/session",
 	require("./src/routes/trainingSessionRoutes")
 );
+app.use(apiRoute + "/exercise", require("./src/routes/exerciseRoutes"));
 
 app.listen(PORT, () => {
 	console.log(`Servidor rodando em http://localhost:${PORT}`);
