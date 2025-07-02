@@ -57,9 +57,28 @@ const fetchTrainingByUser = async (req, res) => {
 	try {
 		const trainings = await prisma.training.findMany({
 			where: { id_user: Number(id_user) },
+			include: {
+				exercise_workout: {
+					select: {
+						id: true,
+						id_exercise: true,
+						series: true,
+						repetitions: true,
+					},
+				},
+			},
 		});
 
-		return res.status(200).json(trainings);
+		const modified = trainings.map((training) => ({
+			...training,
+			exercise_workout: training.exercise_workout.map((item) => ({
+				...item,
+				id_exercise_workout: item.id,
+				id: undefined,
+			})),
+		}));
+
+		return res.status(200).json(modified);
 	} catch (error) {
 		console.error("Erro ao buscar treino:", error);
 		return res.status(500).json({
