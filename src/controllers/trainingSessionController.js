@@ -306,12 +306,18 @@ const fetchExerciseByTrainingAndSession = async (req, res) => {
 			},
 			select: {
 				id_exercise: true,
+				series: true,
+				repetitions: true,
 			},
 		});
 
-		return res
-			.status(200)
-			.json(exerciseIds.map((e) => ({ id_exercise: e.id_exercise })));
+		return res.status(200).json(
+			exerciseIds.map((e) => ({
+				id_exercise: e.id_exercise,
+				series: e.series,
+				repetitions: e.repetitions,
+			}))
+		);
 	} catch (error) {
 		console.error("Erro ao buscar exercícios da sessão de treino:", error);
 		return res.status(500).json({
