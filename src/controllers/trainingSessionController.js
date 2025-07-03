@@ -137,7 +137,10 @@ const deleteTrainingSession = async (req, res) => {
 const fetchTrainingSessionByUser = async (req, res) => {
 	const id_user = req.user.id;
 	const page = parseInt(req.query.page) || 1;
-	const limit = parseInt(req.query.limit) || 6;
+	const limitParam = req.query.limit;
+	const limit = limitParam !== undefined ? parseInt(limitParam) : 6;
+	const unlimited = limit === 0;
+
 	const skip = (page - 1) * limit;
 
 	if (!id_user) {
@@ -152,7 +155,7 @@ const fetchTrainingSessionByUser = async (req, res) => {
 			where: { id_user: Number(id_user) },
 		});
 
-		const trainingsSessions = await prisma.training_session.findMany({
+		const queryOptions = {
 			where: { id_user: Number(id_user) },
 			select: {
 				id: true,
@@ -161,17 +164,20 @@ const fetchTrainingSessionByUser = async (req, res) => {
 				started_at: true,
 				finished_at: true,
 				training: {
-					select: {
-						title: true,
-					},
+					select: { title: true },
 				},
 			},
-			orderBy: {
-				id: "desc",
-			},
-			skip,
-			take: limit,
-		});
+			orderBy: { id: "desc" },
+		};
+
+		if (!unlimited) {
+			queryOptions.skip = skip;
+			queryOptions.take = limit;
+		}
+
+		const trainingsSessions = await prisma.training_session.findMany(
+			queryOptions
+		);
 
 		const formated = trainingsSessions.map((session) => ({
 			id_training_session: session.id,
@@ -186,12 +192,14 @@ const fetchTrainingSessionByUser = async (req, res) => {
 
 		return res.status(200).json({
 			data: formated,
-			pagination: {
-				page,
-				limit,
-				total,
-				totalPages: Math.ceil(total / limit),
-			},
+			pagination: unlimited
+				? null
+				: {
+						page,
+						limit,
+						total,
+						totalPages: Math.ceil(total / limit),
+				  },
 		});
 	} catch (error) {
 		console.error("Erro ao buscar sessões de treino:", error);
