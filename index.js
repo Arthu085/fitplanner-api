@@ -2,17 +2,25 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0"; // obrigatório no Render
 const apiRoute = "/api";
 
-app.use(
-	cors({
-		origin: "http://localhost:5173",
-		credentials: true,
-	})
-);
+// Verifica se está em ambiente de produção
+const isProduction = process.env.NODE_ENV === "production";
+
+// Define o origin de forma condicional
+const corsOptions = {
+	origin: isProduction
+		? "https://seu-front.vercel.app" // substitua pelo seu domínio real
+		: "http://localhost:5173",
+	credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
+// Rotas
 app.use(apiRoute + "/auth", require("./src/routes/authRoutes"));
 app.use(apiRoute + "/training", require("./src/routes/trainingRoutes"));
 app.use(
@@ -21,6 +29,7 @@ app.use(
 );
 app.use(apiRoute + "/exercise", require("./src/routes/exerciseRoutes"));
 
-app.listen(PORT, () => {
-	console.log(`Servidor rodando em http://localhost:${PORT}`);
+// Inicia o servidor
+app.listen(PORT, HOST, () => {
+	console.log(`Servidor rodando em http://${HOST}:${PORT}`);
 });
