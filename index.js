@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = "0.0.0.0"; // obrigatório no Render
+const HOST = "0.0.0.0";
 const apiRoute = "/api";
 
 // Verifica se está em ambiente de produção
@@ -12,7 +12,7 @@ const isProduction = process.env.NODE_ENV === "production";
 // Define o origin de forma condicional
 const corsOptions = {
 	origin: isProduction
-		? "https://seu-front.vercel.app" // substitua pelo seu domínio real
+		? "https://seu-front.vercel.app"
 		: "http://localhost:5173",
 	credentials: true,
 };
