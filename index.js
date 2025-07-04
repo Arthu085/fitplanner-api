@@ -12,7 +12,7 @@ const isProduction = process.env.NODE_ENV === "production";
 // Define o origin de forma condicional
 const corsOptions = {
 	origin: isProduction
-		? "https://seu-front.vercel.app"
+		? "https://fitplanner-xm8c.onrender.com"
 		: "http://localhost:5173",
 	credentials: true,
 };
