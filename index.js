@@ -28,6 +28,7 @@ app.use(
 	require("./src/routes/trainingSessionRoutes")
 );
 app.use(apiRoute + "/exercise", require("./src/routes/exerciseRoutes"));
+app.use(apiRoute + "/muscle/group", require("./src/routes/muscleGroupRoutes"));
 
 // Inicia o servidor
 app.listen(PORT, HOST, () => {
