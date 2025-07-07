@@ -71,4 +71,27 @@ const createExercise = async (req, res) => {
 	}
 };
 
-module.exports = { fetchAllExercises, createExercise };
+const deleteExercise = async (req, res) => {
+	const exercise = req.exercise; // já validado e disponível pelo middleware
+
+	try {
+		await prisma.exercise.delete({
+			where: {
+				id: exercise.id,
+			},
+		});
+
+		return res.status(200).json({
+			message: "Exercício excluído com sucesso",
+			success: true,
+		});
+	} catch (error) {
+		console.error("Erro ao excluir exercício:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
+module.exports = { fetchAllExercises, createExercise, deleteExercise };
