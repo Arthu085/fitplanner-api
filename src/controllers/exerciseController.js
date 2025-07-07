@@ -94,4 +94,53 @@ const deleteExercise = async (req, res) => {
 	}
 };
 
-module.exports = { fetchAllExercises, createExercise, deleteExercise };
+const editExercise = async (req, res) => {
+	const { id_muscle_group, name, description } = req.body;
+	const exercise = req.exercise; // já validado pelo middleware
+
+	try {
+		const updates = {};
+
+		if (name && name !== exercise.name) {
+			updates.name = name;
+		}
+
+		if (id_muscle_group && id_muscle_group !== exercise.id_muscle_group) {
+			updates.id_muscle_group = id_muscle_group;
+		}
+
+		if (description && description !== exercise.description) {
+			updates.description = description;
+		}
+
+		if (Object.keys(updates).length === 0) {
+			return res.status(400).json({
+				message: "Nenhuma alteração foi feita",
+				success: false,
+			});
+		}
+
+		await prisma.exercise.update({
+			where: { id: exercise.id },
+			data: updates,
+		});
+
+		return res.status(200).json({
+			message: "Exercício atualizado com sucesso",
+			success: true,
+		});
+	} catch (error) {
+		console.error("Erro ao editar exercício:", error);
+		return res.status(500).json({
+			error: "Erro no servidor interno",
+			success: false,
+		});
+	}
+};
+
+module.exports = {
+	fetchAllExercises,
+	createExercise,
+	deleteExercise,
+	editExercise,
+};

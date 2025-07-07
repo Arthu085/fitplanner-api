@@ -2,7 +2,7 @@ const Joi = require("joi");
 
 const exerciseSchema = Joi.object({
 	name: Joi.string().min(1).required(),
-	id_muscle_group: Joi.string().min(1).required(),
+	id_muscle_group: Joi.number().integer().required(),
 	description: Joi.string().min(1).required(),
 });
 
