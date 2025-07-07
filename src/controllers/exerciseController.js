@@ -4,6 +4,12 @@ const prisma = new PrismaClient();
 
 const fetchAllExercises = async (req, res) => {
 	const id_user = req.user.id;
+	const page = parseInt(req.query.page) || 1;
+	const limitParam = req.query.limit;
+	const limit = limitParam !== undefined ? parseInt(limitParam) : 6;
+	const unlimited = limit === 0;
+
+	const skip = (page - 1) * limit;
 
 	if (!id_user) {
 		return res.status(400).json({
@@ -13,7 +19,9 @@ const fetchAllExercises = async (req, res) => {
 	}
 
 	try {
-		const exercises = await prisma.exercise.findMany({
+		const total = await prisma.exercise.count({});
+
+		const query = {
 			include: {
 				muscle_group: {
 					select: {
@@ -21,9 +29,26 @@ const fetchAllExercises = async (req, res) => {
 					},
 				},
 			},
-		});
+		};
 
-		return res.status(200).json(exercises);
+		if (!unlimited) {
+			query.skip = skip;
+			query.take = limit;
+		}
+
+		const exercises = await prisma.exercise.findMany(query);
+
+		return res.status(200).json({
+			data: exercises,
+			pagination: unlimited
+				? null
+				: {
+						page,
+						limit,
+						total,
+						totalPages: Math.ceil(total / limit),
+				  },
+		});
 	} catch (error) {
 		console.error("Erro ao buscar exercícios:", error);
 		return res.status(500).json({
