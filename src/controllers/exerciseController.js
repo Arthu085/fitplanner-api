@@ -106,6 +106,18 @@ const deleteExercise = async (req, res) => {
 	const exercise = req.exercise; // já validado e disponível pelo middleware
 
 	try {
+		const count = await prisma.exercise_workout.count({
+			where: { id_exercise: exercise.id },
+		});
+
+		if (count > 0) {
+			return res.status(400).json({
+				success: false,
+				message:
+					"Não é possível excluir: este exercício está vinculado a um treino.",
+			});
+		}
+
 		await prisma.exercise.delete({
 			where: {
 				id: exercise.id,
