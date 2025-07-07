@@ -28,6 +28,12 @@ const fetchAllExercises = async (req, res) => {
 						name: true,
 					},
 				},
+				user: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
 			},
 		};
 
