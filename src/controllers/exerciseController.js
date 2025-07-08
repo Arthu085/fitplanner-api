@@ -35,6 +35,7 @@ const fetchAllExercises = async (req, res) => {
 					},
 				},
 			},
+			orderBy: { id: "desc" },
 		};
 
 		if (!unlimited) {
