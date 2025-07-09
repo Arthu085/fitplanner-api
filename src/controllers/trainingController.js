@@ -6,6 +6,21 @@ const createTraining = async (req, res) => {
 	const { title, exercises } = req.body;
 	const id_user = req.user.id;
 
+	if (
+		title.length > 50 ||
+		!Array.isArray(exercises) ||
+		exercises.some(
+			(ex) =>
+				(ex.series && ex.series > 50) ||
+				(ex.repetitions && ex.repetitions > 100)
+		)
+	) {
+		return res.status(400).json({
+			message: "Quantidade de caracteres inválida",
+			success: false,
+		});
+	}
+
 	try {
 		const tableTraining = await prisma.training.create({
 			data: {
@@ -163,6 +178,21 @@ const deleteTraining = async (req, res) => {
 const editTraining = async (req, res) => {
 	const { title, exercises } = req.body;
 	const training = req.training; // já validado pelo middleware
+
+	if (
+		title.length > 50 ||
+		!Array.isArray(exercises) ||
+		exercises.some(
+			(ex) =>
+				(ex.series && ex.series > 50) ||
+				(ex.repetitions && ex.repetitions > 100)
+		)
+	) {
+		return res.status(400).json({
+			message: "Quantidade de caracteres inválida",
+			success: false,
+		});
+	}
 
 	try {
 		// Busca exercícios atuais no banco para o treino
