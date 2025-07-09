@@ -76,6 +76,13 @@ const createExercise = async (req, res) => {
 		});
 	}
 
+	if (name.length > 100 || description.length > 500) {
+		return res.status(400).json({
+			message: "Quantidade de caracteres inválida",
+			success: false,
+		});
+	}
+
 	try {
 		const exercise = await prisma.exercise.create({
 			data: {
@@ -141,6 +148,13 @@ const deleteExercise = async (req, res) => {
 const editExercise = async (req, res) => {
 	const { id_muscle_group, name, description } = req.body;
 	const exercise = req.exercise; // já validado pelo middleware
+
+	if (name.length > 100 || description.length > 500) {
+		return res.status(400).json({
+			message: "Quantidade de caracteres inválida",
+			success: false,
+		});
+	}
 
 	try {
 		const updates = {};

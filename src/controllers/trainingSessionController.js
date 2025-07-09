@@ -64,8 +64,7 @@ const finishTrainingSession = async (req, res) => {
 			})
 		);
 
-		const data = [];
-
+		// Validação dos limites antes de montar o array "data"
 		for (const ex of exercises) {
 			if (!validMap.has(ex.id_exercise)) {
 				return res.status(400).json({
@@ -74,17 +73,64 @@ const finishTrainingSession = async (req, res) => {
 				});
 			}
 
+			const series = ex.series ?? validMap.get(ex.id_exercise).series;
+			const repetitions =
+				ex.repetitions ?? validMap.get(ex.id_exercise).repetitions;
+			const notes = ex.notes ?? "";
+			const weight = ex.weight;
+
+			// Validar series
+			if (typeof series !== "number" || series < 1 || series > 50) {
+				return res.status(400).json({
+					success: false,
+					message: `Séries inválidas para exercício ${ex.id_exercise}. Deve ser entre 1 e 50.`,
+				});
+			}
+
+			// Validar repetitions
+			if (
+				typeof repetitions !== "number" ||
+				repetitions < 1 ||
+				repetitions > 100
+			) {
+				return res.status(400).json({
+					success: false,
+					message: `Repetições inválidas para exercício ${ex.id_exercise}. Deve ser entre 1 e 100.`,
+				});
+			}
+
+			// Validar notes (string e tamanho)
+			if (typeof notes !== "string" || notes.length > 500) {
+				return res.status(400).json({
+					success: false,
+					message: `Notas inválidas para exercício ${ex.id_exercise}. Máximo 500 caracteres.`,
+				});
+			}
+
+			// Validar weight (se informado, deve ser número >= 0)
+			if (weight !== null && weight !== undefined) {
+				if (typeof weight !== "number" || weight < 0) {
+					return res.status(400).json({
+						success: false,
+						message: `Peso inválido para exercício ${ex.id_exercise}. Deve ser número maior ou igual a zero.`,
+					});
+				}
+			}
+		}
+
+		// Se passou nas validações, monta o array de dados para inserir
+		const data = exercises.map((ex) => {
 			const defaultValues = validMap.get(ex.id_exercise);
 
-			data.push({
+			return {
 				id_training_session: session.id,
 				id_exercise: ex.id_exercise,
 				series: ex.series ?? defaultValues.series,
 				repetitions: ex.repetitions ?? defaultValues.repetitions,
 				weight: ex.weight ?? null,
 				notes: ex.notes ?? null,
-			});
-		}
+			};
+		});
 
 		const updatedSession = await prisma.training_session.update({
 			where: { id: session.id },

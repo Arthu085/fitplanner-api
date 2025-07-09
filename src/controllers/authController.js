@@ -16,22 +16,25 @@ const register = async (req, res) => {
 			.json({ message: "Usuário já existe", success: false });
 	}
 
+	if (name.length > 50 || email.length > 100 || password.length > 70) {
+		return res.status(400).json({
+			message: "Quantidade de caracteres inválida",
+			success: false,
+		});
+	}
+
 	if (!name || name.trim().length < 3) {
-		return res
-			.status(400)
-			.json({
-				message: "Nome deve ter no mínimo 3 caracteres",
-				success: false,
-			});
+		return res.status(400).json({
+			message: "Nome deve ter no mínimo 3 caracteres",
+			success: false,
+		});
 	}
 
 	if (!password || password.length < 6) {
-		return res
-			.status(400)
-			.json({
-				message: "Senha deve ter no mínimo 6 caracteres",
-				success: false,
-			});
+		return res.status(400).json({
+			message: "Senha deve ter no mínimo 6 caracteres",
+			success: false,
+		});
 	}
 
 	if (!validator.isEmail(email)) {
