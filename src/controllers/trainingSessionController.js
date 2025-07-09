@@ -185,7 +185,8 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	const page = parseInt(req.query.page) || 1;
 	const limitParam = req.query.limit;
 	const limit = limitParam !== undefined ? parseInt(limitParam) : 6;
-	const unlimited = limit === 0;
+	const search = req.query.search?.toLowerCase() || "";
+	const unlimited = limit === 0 || Boolean(search);
 
 	const skip = (page - 1) * limit;
 
@@ -197,12 +198,25 @@ const fetchTrainingSessionByUser = async (req, res) => {
 	}
 
 	try {
+		const baseWhere = {
+			id_user: Number(id_user),
+		};
+
+		if (search) {
+			baseWhere.training = {
+				title: {
+					contains: search,
+					mode: "insensitive",
+				},
+			};
+		}
+
 		const total = await prisma.training_session.count({
 			where: { id_user: Number(id_user) },
 		});
 
 		const queryOptions = {
-			where: { id_user: Number(id_user) },
+			where: baseWhere,
 			select: {
 				id: true,
 				id_user: true,

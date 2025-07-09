@@ -7,7 +7,8 @@ const fetchAllExercises = async (req, res) => {
 	const page = parseInt(req.query.page) || 1;
 	const limitParam = req.query.limit;
 	const limit = limitParam !== undefined ? parseInt(limitParam) : 6;
-	const unlimited = limit === 0;
+	const search = req.query.search?.toLowerCase() || "";
+	const unlimited = limit === 0 || Boolean(search);
 
 	const skip = (page - 1) * limit;
 
@@ -19,9 +20,19 @@ const fetchAllExercises = async (req, res) => {
 	}
 
 	try {
-		const total = await prisma.exercise.count({});
+		const baseWhere = {};
+
+		if (search) {
+			baseWhere.name = {
+				contains: search,
+				mode: "insensitive",
+			};
+		}
+
+		const total = await prisma.exercise.count({ where: baseWhere });
 
 		const query = {
+			where: baseWhere,
 			include: {
 				muscle_group: {
 					select: {
