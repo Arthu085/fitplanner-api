@@ -109,10 +109,11 @@ const finishTrainingSession = async (req, res) => {
 
 			// Validar weight (se informado, deve ser número >= 0)
 			if (weight !== null && weight !== undefined) {
-				if (typeof weight !== "number" || weight < 0) {
+				if (typeof weight !== "number" || weight < 1) {
 					return res.status(400).json({
 						success: false,
-						message: `Peso inválido para exercício ${ex.id_exercise}. Deve ser número maior ou igual a zero.`,
+						message: `Peso inválido para exercício ${ex.id_exercise}. Deve ser número maior 
+						que zero.`,
 					});
 				}
 			}
