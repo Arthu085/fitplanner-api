@@ -45,6 +45,8 @@ JWT_SECRET="sua_chave_secreta"
 
 Execute o script `db_script.sql` localizado na raiz do projeto.
 
+**É necessário adicionar os grupos musculares manualmente via banco**
+
 ### 5️⃣ Iniciar o projeto
 
 ```bash
