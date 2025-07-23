@@ -26,10 +26,11 @@ git clone https://github.com/Arthu085/fitplanner-api
 cd fitplanner-api
 ```
 
-### 2️⃣ Instalar dependências
+### 2️⃣ Instalar dependências e schemas do banco
 
 ```bash
 npm install
+npx prisma generate
 ```
 
 ### 3️⃣ Configurar variáveis de ambiente
